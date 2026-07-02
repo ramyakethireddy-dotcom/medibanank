@@ -86,6 +86,7 @@ curl "http://localhost:8080/posts/1/comments"
   "title": "Validation Error",
   "status": 400,
   "detail": "userId must be a positive integer",
+  "type": "urn:audition:problem:validation-error",
   "instance": "/posts"
 }
 ```

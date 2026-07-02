@@ -59,7 +59,8 @@ It is  highly recommended that the application be loaded and started up to avoid
 
 This section provides information on the application and what the needs to be completed as part of the audition application.
 
-The audition consists of multiple TODO statements scattered throughout the codebase. The applicants are expected to:
+The audition consists of multiple 
+TODO statements scattered throughout the codebase. The applicants are expected to:
 
 - Complete all the TODO statements.
 - Add unit tests where applicants believe it to be necessary.
@@ -122,6 +123,7 @@ Validation failures return a plain `ProblemDetail` response with `title`, `statu
   "title": "Validation Error",
   "status": 400,
   "detail": "userId must be a positive integer",
+  "type": "urn:audition:problem:validation-error",
   "instance": "/posts"
 }
 ```

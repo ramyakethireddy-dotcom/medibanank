@@ -6,6 +6,8 @@ import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import com.audition.common.exception.SystemException;
 import com.audition.common.logging.AuditionLogger;
 import io.micrometer.common.util.StringUtils;
+import java.net.URI;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
@@ -25,6 +27,9 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     public static final String DEFAULT_TITLE = "API Error Occurred";
     private static final String ERROR_MESSAGE = " Error Code from Exception could not be mapped to a valid HttpStatus Code - ";
     private static final String DEFAULT_MESSAGE = "API Error occurred. Please contact support or administrator.";
+    private static final String PROBLEM_TYPE_PREFIX = "urn:audition:problem:";
+    private static final String METHOD_NOT_ALLOWED_TYPE = "method-not-allowed";
+    private static final String INTERNAL_SERVER_ERROR_TYPE = "internal-server-error";
 
     private final AuditionLogger logger;
 
@@ -85,7 +90,36 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
         } else {
             problemDetail.setTitle(DEFAULT_TITLE);
         }
+        problemDetail.setType(URI.create(PROBLEM_TYPE_PREFIX + resolveProblemTypeSlug(exception, statusCode)));
         return problemDetail;
+    }
+
+    private String resolveProblemTypeSlug(final Exception exception, final HttpStatusCode statusCode) {
+        if (exception instanceof SystemException) {
+            final SystemException systemException = (SystemException) exception;
+            if (StringUtils.isNotBlank(systemException.getTitle())) {
+                return slugify(systemException.getTitle());
+            }
+        }
+        if (exception instanceof HttpClientErrorException) {
+            final HttpClientErrorException clientErrorException = (HttpClientErrorException) exception;
+            if (StringUtils.isNotBlank(clientErrorException.getStatusText())) {
+                return slugify(clientErrorException.getStatusText());
+            }
+        }
+        if (statusCode.value() == METHOD_NOT_ALLOWED.value()) {
+            return METHOD_NOT_ALLOWED_TYPE;
+        }
+        if (statusCode.value() == INTERNAL_SERVER_ERROR.value()) {
+            return INTERNAL_SERVER_ERROR_TYPE;
+        }
+        return "http-" + statusCode.value();
+    }
+
+    private String slugify(final String value) {
+        return value.toLowerCase(Locale.ROOT)
+            .replaceAll("[^a-z0-9]+", "-")
+            .replaceAll("^-+|-+$", "");
     }
 
     /**
