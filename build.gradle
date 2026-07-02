@@ -1,0 +1,95 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.0.3'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id "maven-publish"
+    id 'jacoco'
+    id "com.github.spotbugs" version "5.0.14"
+    id "io.freefair.lombok" version "8.0.1"
+    id "checkstyle"
+    id "pmd"
+}
+
+group = 'com.audition'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+
+ apply from: 'config/code-analysis.gradle'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+lombok {
+    version = '1.18.32'
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('springCloudVersion', "2022.0.1")
+    set('springdocVersion', "2.0.2")
+}
+
+dependencies {
+
+    // Core web stack used by the current REST endpoints.
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.cloud:spring-cloud-starter-config"
+
+    // Observability dependencies are kept because the app is expected to expose
+    implementation "io.micrometer:micrometer-tracing-bridge-brave"
+    implementation "io.micrometer:micrometer-tracing"
+    implementation "io.micrometer:micrometer-registry-prometheus"
+    implementation "io.micrometer:context-propagation"
+
+    // Swagger/OpenAPI UI for endpoint documentation.
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+
+
+    // commenting this as no database entities, repositories, or persistence layer in this app.
+    // implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+    // commenting this as the API is servlet-based and uses RestTemplate, not reactive WebClient.
+    // implementation "org.springframework.boot:spring-boot-starter-webflux"
+    // commenting this as there are no aspect classes or pointcuts in the codebase.
+    // implementation "org.springframework.boot:spring-boot-starter-aop"
+    // commenting this as no circuit-breaker annotations or reactive flows.
+    // implementation "org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j"
+    // commenting this as Spring Boot already brings the supported logging stack transitively.
+    // implementation "org.slf4j:slf4j-api:2.0.16"
+    // implementation "org.slf4j:slf4j-api:${slf4jVersion}"
+    // implementation "ch.qos.logback:logback-core:${logbackVersion}"
+    // implementation "ch.qos.logback:logback-classic:${logbackVersion}"
+
+
+    developmentOnly "org.springframework.boot:spring-boot-devtools"
+    runtimeOnly "io.micrometer:micrometer-registry-prometheus"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "io.projectreactor:reactor-test"
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+
+task prepareGitHooks(type: Copy) {
+    from "$projectDir/git-hooks"
+    into "$projectDir/.git/hooks"
+    include "*"
+}
+tasks.matching { it.name != 'prepareGitHooks' }.all { Task task -> task.dependsOn prepareGitHooks }
+
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
